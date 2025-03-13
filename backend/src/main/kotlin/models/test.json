@@ -1,0 +1,33 @@
+{
+  "schema": {
+    "type": "object",
+    "properties": {
+      "microservices": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "Имя микросервиса"
+            },
+            "classes": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "description": "Класс, связанный с микросервисом"
+              },
+              "description": "Массив классов"
+            },
+            "description": {
+              "type": "string",
+              "description": "Твой комментарий, почему ты решил создать микросервис с такими классами"
+            }
+          },
+          "required": ["name", "classes"]
+        }
+      }
+    },
+    "required": ["microservices"]
+  }
+}
