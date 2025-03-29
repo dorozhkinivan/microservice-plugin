@@ -13,13 +13,12 @@ repositories {
 
 intellij {
     version.set("2024.1.7")
-    type.set("IC") // Target IDE Platform
+    type.set("IC")
 
     plugins.set(listOf("com.intellij.java", "org.jetbrains.kotlin"))
 }
 
 tasks {
-    // Set the JVM compatibility versions
     withType<JavaCompile> {
         sourceCompatibility = "17"
         targetCompatibility = "17"

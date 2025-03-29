@@ -1,9 +1,14 @@
 package ru.itmo.ivandor.utils
 
 interface Settings {
-    val token: String
+    val gptToken: String
+    val oauthClientId: String
+    val oauthSecret: String
+    val jwtSecret: String
+    val jwtLifetimeMs: Int
+    val ycFolder: String
 }
 
-data class SettingsImpl(
-    override val token: String = System.getenv("GPT_TOKEN") ?: throw RuntimeException("Token not provided")
-) : Settings
+object SettingsImpl : Settings {
+
+}

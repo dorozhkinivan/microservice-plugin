@@ -10,15 +10,14 @@ import com.intellij.openapi.vfs.VirtualFile
 class MyCustomFileEditorProvider : FileEditorProvider, DumbAware {
 
     override fun accept(project: Project, file: VirtualFile): Boolean {
-        // Условие, по которому ваш редактор будет открыт
-        return file.name == "myCustomVirtualFile"
+        return file.name == "Microservices"
     }
 
     override fun createEditor(project: Project, file: VirtualFile): FileEditor {
-        return Test(project, file)
+        return MicroservicesFacadesFileEditor(project, file as LightVirtualFile1)
     }
 
-    override fun getEditorTypeId(): String = "my-custom-editor"
+    override fun getEditorTypeId(): String = "microservices"
 
     override fun getPolicy(): FileEditorPolicy = FileEditorPolicy.HIDE_DEFAULT_EDITOR
 

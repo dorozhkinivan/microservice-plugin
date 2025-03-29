@@ -1,5 +1,7 @@
 package ru.itmo.ivandor
 
+import com.auth0.jwt.JWT
+import com.auth0.jwt.algorithms.Algorithm
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.*
@@ -24,8 +26,9 @@ import org.slf4j.event.Level
 import ru.itmo.ivandor.handlers.completeRoute
 import ru.itmo.ivandor.handlers.newJwt
 import ru.itmo.ivandor.handlers.processRoute
-import ru.itmo.ivandor.service.YandexGPTService
-import ru.itmo.ivandor.service.YandexGPTServiceImpl
+import ru.itmo.ivandor.handlers.proxyForOauthCode
+import ru.itmo.ivandor.service.*
+import ru.itmo.ivandor.utils.SettingsImpl
 
 fun main() {
     embeddedServer(Netty, port = 8080) {
@@ -47,14 +50,32 @@ fun main() {
 
         install(Authentication) {
             jwt("auth-jwt") {
-                realm = "aboba"
+                verifier(
+                    JWT
+                        .require(Algorithm.HMAC256(SettingsImpl.jwtSecret))
+                        .build()
+                )
+
+                validate { credential ->
+                    if (credential.payload.getClaim("login").asString() != "") {
+                        JWTPrincipal(credential.payload)
+                    } else {
+                        null
+                    }
+                }
+                challenge { _, _ ->
+                    call.respond(HttpStatusCode.Unauthorized, "Token is not valid or has expired")
+                }
             }
         }
 
         routing {
-            completeRoute()
-            processRoute()
+            authenticate("auth-jwt") {
+                completeRoute()
+                processRoute()
+            }
             newJwt()
+            proxyForOauthCode()
         }
     }.start(wait = true)
 }
@@ -73,8 +94,6 @@ val mainModule = module {
         }
     }
 
-    single<YandexGPTService> {
-        YandexGPTServiceImpl(get())
-    }
-    // Other dependencies can be defined here
+    single<YandexGPTService> { YandexGPTServiceImpl(get()) }
+    single<JwtService> { JwtServiceImpl(get()) }
 }

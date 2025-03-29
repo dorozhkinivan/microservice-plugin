@@ -9,7 +9,6 @@ import kotlinx.serialization.json.Json
 data class JsonSchema(
     val schema: Schema
 ) {
-    // Значение по умолчанию для объекта Schema
     companion object {
         val default = JsonSchema(
             schema = Schema.default
@@ -23,7 +22,6 @@ data class Schema(
     val properties: Properties,
     val required: List<String> = listOf("microservices")
 ) {
-    // Значение по умолчанию для объекта Properties
     companion object {
         val default = Schema(
             properties = Properties.default
@@ -35,7 +33,6 @@ data class Schema(
 data class Properties(
     val microservices: Microservices
 ) {
-    // Значение по умолчанию для объекта Microservices
     companion object {
         val default = Properties(
             microservices = Microservices.default
@@ -48,7 +45,6 @@ data class Microservices(
     val type: String = "array",
     val items: Items
 ) {
-    // Значение по умолчанию для объекта Items
     companion object {
         val default = Microservices(
             items = Items.default
@@ -62,7 +58,6 @@ data class Items(
     val properties: ItemProperties,
     val required: List<String> = listOf("name", "classes")
 ) {
-    // Значение по умолчанию для объекта ItemProperties
     companion object {
         val default = Items(
             properties = ItemProperties.default
@@ -75,7 +70,6 @@ data class ItemProperties(
     val name: Property = Property("string", "Имя микросервиса"),
     val classes: Property1 = Property1("array", "Массив классов", items = Property("string", "Класс, связанный с микросервисом"))
 ) {
-    // Значение по умолчанию
     companion object {
         val default = ItemProperties()
     }
@@ -85,7 +79,6 @@ data class ItemProperties(
 data class Property(
     val type: String,
     val description: String,
-   // @SerialName("items") val items: Property? = null
 )
 
 @Serializable
@@ -94,13 +87,6 @@ data class Property1(
     val description: String,
      @SerialName("items") val items: Property? = null
 )
-
-fun main() {
-    // Пример использования значений по умолчанию
-    val defaultJsonSchema = JsonSchema.default
-    println(Json { encodeDefaults = true; prettyPrint = true }.encodeToString(defaultJsonSchema))
-}
-
 
 
 // response
@@ -114,4 +100,16 @@ data class Microservice(
     val name: String,
     val classes: List<String>,
     val description: String,
+)
+
+// request
+@Serializable
+data class Request(
+    val classes: List<Class>,
+)
+
+@Serializable
+data class Class(
+    val name: String,
+    val methods: List<String>,
 )

@@ -5,15 +5,15 @@
 
     <!-- Public plugin name should be written in Title Case.
          Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-name -->
-    <name>TESTING123</name>
+    <name>Microservice Architecture</name>
 
     <!-- A displayed Vendor name or Organization ID displayed on the Plugins Page. -->
-    <vendor email="support@yourcompany.com" url="https://www.yourcompany.com">YourCompany</vendor>
+    <vendor email="dorozhkinivan123@gmail.com" url="https://github.com/dorozhkinivan">Ivan Dorozhkin</vendor>
 
     <!-- Description of the plugin displayed on the Plugin Page and IDE Plugin Manager.
          Simple HTML elements (text formatting, paragraphs, and lists) can be added inside of <![CDATA[ ]]> tag.
          Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-description -->
-    <description>TESTING1234</description>
+    <description>Plugin for refactoring code to microservice architecture using LLM model</description>
 
     <!-- Product and plugin compatibility requirements.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html -->
@@ -25,15 +25,11 @@
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
     <extensions defaultExtensionNs="com.intellij">
         <fileEditorProvider implementation="ru.itmo.ivandor.plugin.actions.MyCustomFileEditorProvider"/>
-
+        <httpRequestHandler implementation="ru.itmo.ivandor.plugin.auth.MSAuthCallbackHandler"/>
     </extensions>
 
     <actions>
-        <action id="ru.itmo.ivandor.plugin.actions.DisplayClassNamesAction"
-                class="ru.itmo.ivandor.plugin.actions.DisplayClassNamesAction" text="abobus" description="aboba">
-            <add-to-group group-id="ProjectViewPopupMenu" anchor="first"/>
-        </action>
-        <action id="ShowJBCefDialogAction" class="ShowJBCefDialogAction" text="wtf" description="wtf">
+        <action id="AnalyseCodeAction" class="AnalyseCodeAction" text="Analyse" description="Analyse code for refactoring code to microservice architecture using LLM model">
             <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
         </action>
     </actions>
