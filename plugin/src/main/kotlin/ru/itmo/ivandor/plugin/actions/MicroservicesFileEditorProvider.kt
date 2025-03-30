@@ -7,7 +7,7 @@ import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 
-class MyCustomFileEditorProvider : FileEditorProvider, DumbAware {
+class MicroservicesFileEditorProvider : FileEditorProvider, DumbAware {
 
     override fun accept(project: Project, file: VirtualFile): Boolean {
         return file.name == "Microservices"

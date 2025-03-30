@@ -9,11 +9,11 @@ import com.intellij.openapi.components.Storage
 
 @Service(Service.Level.APP)
 @State(
-    name = "MsSettings",
+    name = "PluginSettings",
     storages = [Storage(value = "microservices_plugin.xml")],
     category = SettingsCategory.TOOLS
 )
-class MsSettings : PersistentStateComponent<MsSettings.State> {
+class PluginSettings : PersistentStateComponent<PluginSettings.State> {
     private var myState = State()
 
     override fun getState(): State {
@@ -29,9 +29,9 @@ class MsSettings : PersistentStateComponent<MsSettings.State> {
     )
 
     companion object {
-        var HOST: String = "http://localhost:8080"
+        val HOST: String = "http://localhost:8080"
 
-        val instance: MsSettings
-            get() = ApplicationManager.getApplication().getService(MsSettings::class.java)
+        val instance: PluginSettings
+            get() = ApplicationManager.getApplication().getService(PluginSettings::class.java)
     }
 }
