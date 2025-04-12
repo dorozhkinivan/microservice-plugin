@@ -1,6 +1,7 @@
 plugins {
     kotlin("jvm") version "2.1.10"
     kotlin("plugin.serialization") version "2.1.10"
+    id("io.ktor.plugin") version "2.3.0" // Check if it's latest
 }
 
 group = "ru.itmo.ivandor"
@@ -42,4 +43,14 @@ tasks.test {
 }
 kotlin {
     jvmToolchain(21)
+}
+
+application {
+    mainClass.set("ru.itmo.ivandor.MainKt")
+}
+
+ktor {
+    fatJar {
+        archiveFileName.set("fat.jar")
+    }
 }
