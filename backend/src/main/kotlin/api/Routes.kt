@@ -1,4 +1,4 @@
-package ru.itmo.ivandor.handlers
+package ru.itmo.ivandor.api
 
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm

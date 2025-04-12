@@ -1,4 +1,5 @@
 plugins {
+    id("application")
     kotlin("jvm") version "2.1.10"
     kotlin("plugin.serialization") version "2.1.10"
     id("io.ktor.plugin") version "2.3.0" // Check if it's latest
@@ -36,6 +37,11 @@ dependencies {
     // logging
     implementation("org.slf4j:slf4j-api:1.6.1")
     implementation("org.slf4j:slf4j-simple:1.6.1")
+
+    // clickhouse
+    implementation("com.clickhouse:clickhouse-jdbc:0.8.4") {
+        exclude(group = "org.slf4j")
+    }
 }
 
 tasks.test {

@@ -2,7 +2,7 @@ FROM openjdk:21-jdk
 
 WORKDIR /app
 
-COPY backend/build/libs/*.jar app.jar
+COPY backend/build/libs/fat.jar app.jar
 
 EXPOSE 8080
 

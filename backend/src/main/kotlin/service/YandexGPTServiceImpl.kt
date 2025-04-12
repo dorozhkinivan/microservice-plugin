@@ -1,19 +1,21 @@
 package ru.itmo.ivandor.service
 
-import io.ktor.client.HttpClient
+import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
+import io.ktor.http.*
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import ru.itmo.ivandor.models.*
 import ru.itmo.ivandor.utils.SettingsImpl
+import java.sql.DriverManager
+
 
 class YandexGPTServiceImpl(
     private val client: HttpClient,
 ) : YandexGPTService {
     override suspend fun getMicroservicesModules(classNames: List<Class>, contextInfo: Any?): Respp {
-        println("GOT $classNames from plugin")
         val reqq = """
             {
                 "modelUri": "gpt://${SettingsImpl.ycFolder}/yandexgpt/rc",
@@ -113,7 +115,6 @@ class YandexGPTServiceImpl(
             )
         )
 
-        println(Json { encodeDefaults = true; prettyPrint = true; }.encodeToString(reqq))
 
         val resp = client.post("https://llm.api.cloud.yandex.net/foundationModels/v1/completion") {
             header("x-folder-id", SettingsImpl.ycFolder)
@@ -122,12 +123,14 @@ class YandexGPTServiceImpl(
             setBody(reqq)
         }
 
+        if (!resp.status.isSuccess())
+        throw RuntimeException("!!! ${resp.bodyAsText()}  | ${resp.status.value}!!!")
+
 
         val text = resp.body<DataClass>().result.alternatives.first().message.text
 
         val c = Json.decodeFromString<Respp>(text)
 
-        println(c.microservices.size)
         return c
     }
 
