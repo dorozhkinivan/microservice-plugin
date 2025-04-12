@@ -24,6 +24,6 @@ jobs:
       - name: Chmod temp
         run: chmod 600 ~/temp_file
       - name: Ssh
-        run: ssh -o StrictHostKeyChecking=no -i ~/temp_file "${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }}" "bash" /home/admin/deploy.sh "production" "${{ secrets.IMAGE_NAME }}" "${{ secrets.GPT_TOKEN }}" "${{ secrets.OAUTH_CLIENT_ID }}" "${{ secrets.OAUTH_SECRET }}" "${{ secrets.JWT_SECRET }}" "${{ secrets.YC_FOLDER }}"
+        run: ssh -o StrictHostKeyChecking=no -i ~/temp_file "${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }}" "bash" /home/admin/deploy.sh "production" "${{ secrets.IMAGE_NAME }}" "${{ secrets.GPT_TOKEN }}" "${{ secrets.OAUTH_CLIENT_ID }}" "${{ secrets.OAUTH_SECRET }}" "${{ secrets.JWT_SECRET }}" "${{ secrets.YC_FOLDER }}" "${{ secrets.DB_HOST }}" "${{ secrets.DB_PASS }}"
       - name: Rm file
         run: rm -f ~/temp_file

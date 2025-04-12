@@ -23,14 +23,38 @@ import kotlinx.serialization.json.Json
 import org.koin.dsl.module
 import org.koin.ktor.plugin.Koin
 import org.slf4j.event.Level
-import ru.itmo.ivandor.handlers.completeRoute
-import ru.itmo.ivandor.handlers.newJwt
-import ru.itmo.ivandor.handlers.processRoute
-import ru.itmo.ivandor.handlers.proxyForOauthCode
+import ru.itmo.ivandor.api.completeRoute
+import ru.itmo.ivandor.api.newJwt
+import ru.itmo.ivandor.api.processRoute
+import ru.itmo.ivandor.api.proxyForOauthCode
 import ru.itmo.ivandor.service.*
 import ru.itmo.ivandor.utils.SettingsImpl
+import java.sql.DriverManager
 
 fun main() {
+    try {
+        // val DB_HOST
+        val DB_NAME = "test_db"
+        val DB_USER = "admin"
+        //  val DB_PASS
+
+        val CACERT = "/usr/local/share/ca-certificates/Yandex/RootCA.crt"
+
+        val DB_URL =
+            String.format("jdbc:clickhouse://%s:8443/%s?ssl=1&sslmode=strict&sslrootcert=%s", System.getenv("DB_HOST"), DB_NAME, CACERT)
+
+        java.lang.Class.forName("com.clickhouse.jdbc.ClickHouseDriver")
+        val conn = DriverManager.getConnection(DB_URL, DB_USER, System.getenv("DB_PASS"))
+        val rs = conn.createStatement().executeQuery("SELECT version()")
+        if (rs.next()) {
+            println(rs.getString(1))
+        }
+        conn.close()
+        throw RuntimeException("SUCCESS")
+    }
+    catch (ex: Exception) {
+        ex.printStackTrace()
+    }
     embeddedServer(Netty, port = 8080) {
 
         install(Koin) {
