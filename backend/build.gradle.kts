@@ -42,6 +42,9 @@ dependencies {
     implementation("com.clickhouse:clickhouse-jdbc:0.8.4") {
         exclude(group = "org.slf4j")
     }
+
+    // connection pool
+    implementation("com.zaxxer:HikariCP:3.4.5")
 }
 
 tasks.test {

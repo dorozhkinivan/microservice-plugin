@@ -5,20 +5,19 @@ import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import ru.itmo.ivandor.models.*
-import ru.itmo.ivandor.utils.SettingsImpl
-import java.sql.DriverManager
+import ru.itmo.ivandor.utils.Settings
 
 
 class YandexGPTServiceImpl(
     private val client: HttpClient,
-) : YandexGPTService {
-    override suspend fun getMicroservicesModules(classNames: List<Class>, contextInfo: Any?): Respp {
+    private val analyticsService: AnalyticsService,
+    ) : YandexGPTService {
+    override suspend fun getMicroservicesModules(classNames: List<Class>, login: String): Respp {
         val reqq = """
             {
-                "modelUri": "gpt://${SettingsImpl.ycFolder}/yandexgpt/rc",
+                "modelUri": "gpt://${Settings.ycFolder}/yandexgpt/rc",
                 "completionOptions": {
                     "stream": false,
                     "temperature": 0.8,
@@ -73,52 +72,9 @@ class YandexGPTServiceImpl(
             }
         """.trimIndent()
 
-
-
-
-        val reqqq = Req(
-            modelUri = "nda",
-            completionOptions = Conf(
-                stream = false,
-                temperature = 0.3,
-                maxTokens = 5000,
-                reasoningOptions = ReasoningOptions(
-                    mode = "DISABLED"
-                )
-            ),
-            jsonSchema = JsonSchema.default,
-            messages = listOf(
-                Message(
-                    role = "system",
-                    text = """
-                        Ты умный ассистент, помогаешь оптимизировать код на java и kotlin.Тебе передан список классов. Подумай, какие из них них стоит вынести в микросервисы.
-                    """.trimIndent()
-                ),
-//                    Message(
-//                        role = "user",
-//                        text = """
-//                        Какими науками занимался Альберт Эйнштейн?
-//                    """.trimIndent()
-//                    ),
-//                    Message(
-//                        role = "assistant",
-//                        text = """
-//                       {"text": "Альберт Эйнштейн занимался физикой, а также работал в области математики и философии науки."}
-//                    """.trimIndent()
-//                    ),
-                Message(
-                    role = "user",
-                    text = """
-                        %abob
-                    """.trimIndent()
-                ),
-            )
-        )
-
-
         val resp = client.post("https://llm.api.cloud.yandex.net/foundationModels/v1/completion") {
-            header("x-folder-id", SettingsImpl.ycFolder)
-            header("Authorization", "Bearer ${SettingsImpl.gptToken}")
+            header("x-folder-id", Settings.ycFolder)
+            header("Authorization", "Bearer ${Settings.gptToken}")
             header("Content-Type", "application/json")
             setBody(reqq)
         }
@@ -127,14 +83,20 @@ class YandexGPTServiceImpl(
         throw RuntimeException("!!! ${resp.bodyAsText()}  | ${resp.status.value}!!!")
 
 
-        val text = resp.body<DataClass>().result.alternatives.first().message.text
+        val text = resp.body<GptResponse>().result.alternatives.first().message.text
 
-        val c = Json.decodeFromString<Respp>(text)
+        val gptResponse = Json.decodeFromString<Respp>(text)
 
-        return c
-    }
+        analyticsService.saveRequestData(
+            login = login,
+            requestId = gptResponse.requestId,
+            classes = classNames
+        )
+        analyticsService.saveYandexGptData(
+            requestId = gptResponse.requestId,
+            microservices = gptResponse.microservices,
+        )
 
-    override suspend fun getModulesForContext(classNames: List<String>, contextInfo: Any?): Any {
-        TODO("Not yet implemented")
+        return gptResponse
     }
 }

@@ -9,12 +9,9 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiJavaFile
 import com.intellij.psi.PsiManager
-import java.util.concurrent.TimeUnit
 
 import org.jetbrains.kotlin.psi.KtFile
 import ru.itmo.ivandor.plugin.actions.LightVirtualFile1
-import ru.itmo.ivandor.plugin.auth.MSAuthService
-import ru.itmo.ivandor.plugin.settings.MsSettings
 
 
 class AnalyseCodeAction : AnAction() {

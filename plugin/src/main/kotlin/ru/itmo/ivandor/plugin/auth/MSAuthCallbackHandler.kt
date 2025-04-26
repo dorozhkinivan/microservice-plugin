@@ -4,14 +4,14 @@ import com.intellij.collaboration.auth.OAuthCallbackHandlerBase
 import com.intellij.collaboration.auth.services.OAuthService
 
 internal class MSAuthCallbackHandler : OAuthCallbackHandlerBase() {
-    override fun oauthService(): OAuthService<*> = MSAuthService.instance
+    override fun oauthService(): OAuthService<*> = PluginOAuthService.instance
 
     override fun handleOAuthResult(oAuthResult: OAuthService.OAuthResult<*>): AcceptCodeHandleResult {
         val redirectUrl = if (oAuthResult.isAccepted) {
-            MSAuthService.SERVICE_URL.resolve("complete")
+            PluginOAuthService.SERVICE_URL.resolve("oauth_success")
         }
         else {
-            MSAuthService.SERVICE_URL.resolve("error")
+            PluginOAuthService.SERVICE_URL.resolve("oauth_error")
         }
         return AcceptCodeHandleResult.Redirect(redirectUrl)
     }

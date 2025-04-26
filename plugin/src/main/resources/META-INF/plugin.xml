@@ -24,7 +24,7 @@
     <!-- Extension points defined by the plugin.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
     <extensions defaultExtensionNs="com.intellij">
-        <fileEditorProvider implementation="ru.itmo.ivandor.plugin.actions.MyCustomFileEditorProvider"/>
+        <fileEditorProvider implementation="ru.itmo.ivandor.plugin.actions.MicroservicesFileEditorProvider"/>
         <httpRequestHandler implementation="ru.itmo.ivandor.plugin.auth.MSAuthCallbackHandler"/>
     </extensions>
 

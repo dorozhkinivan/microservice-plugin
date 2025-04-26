@@ -9,7 +9,6 @@ import com.intellij.lang.java.JavaLanguage
 import com.intellij.notification.Notification
 import com.intellij.notification.NotificationType
 import com.intellij.notification.Notifications
-import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.fileEditor.FileEditor
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.FileEditorState
@@ -35,7 +34,6 @@ import java.awt.event.MouseEvent
 import java.beans.PropertyChangeListener
 import java.net.HttpURLConnection
 import java.util.*
-import java.util.concurrent.TimeUnit
 import javax.swing.BorderFactory
 import javax.swing.Box
 import javax.swing.BoxLayout
@@ -52,12 +50,12 @@ import javax.swing.SwingWorker
 import org.jetbrains.kotlin.idea.KotlinFileType
 import org.jetbrains.kotlin.idea.KotlinLanguage
 import removeUnusedImports
-import ru.itmo.ivandor.plugin.auth.MSAuthService
+import ru.itmo.ivandor.plugin.auth.PluginOAuthService
 import ru.itmo.ivandor.plugin.dto.ClassDto
 import ru.itmo.ivandor.plugin.dto.MicroserviceDto
 import ru.itmo.ivandor.plugin.dto.RequestDto
 import ru.itmo.ivandor.plugin.dto.ResponseDto
-import ru.itmo.ivandor.plugin.settings.MsSettings
+import ru.itmo.ivandor.plugin.settings.PluginSettings
 
 
 fun createFacadesPanel(businessLogicHolder: BusinessLogicHolder, viewHolder: ViewHolder, file: LightVirtualFile1): JPanel {
@@ -122,11 +120,7 @@ fun createFacadesPanel(businessLogicHolder: BusinessLogicHolder, viewHolder: Vie
 
     }
 
-    HttpRequestWorker(file.classes.mapNotNull {
-        if (it.name == null || it.methods.isEmpty())
-            return@mapNotNull null
-        ClassDto(name = it.name!!, methods = it.methods.map { it.name })
-    }) { msList ->
+    HttpRequestWorker(file = file, businessLogicHolder = businessLogicHolder) { msList ->
         msList.forEach {
             addFacade(it)
         }
@@ -340,27 +334,34 @@ fun createFacadeView(businessLogicHolder: BusinessLogicHolder, viewHolder: ViewH
 
 
 class HttpRequestWorker(
-    private val requestData: List<ClassDto>,
-    private val block: (List<MicroserviceDto>) -> Unit
+    private val file: LightVirtualFile1,
+    private val businessLogicHolder: BusinessLogicHolder,
+    private val block: (List<MicroserviceDto>) -> Unit,
 ) : SwingWorker<List<MicroserviceDto>, Unit>() {
 
     private fun getMicroservicesOrNullOn401(jwt: String) : List<MicroserviceDto>? {
-        val jsonBody = GsonBuilder().create().toJson(RequestDto(requestData))
-        return HttpRequests.post("${MsSettings.HOST}/process", "application/json")
+        val classes = file.classes.map {
+            ClassDto(name = it.name ?: "?", methods = it.methods.map { it.name })
+        }
+        val jsonBody = GsonBuilder().create().toJson(RequestDto(classes))
+        return HttpRequests.post("${PluginSettings.HOST}/process", "application/json")
             .tuner {
                 it.setRequestProperty("Authorization", "Bearer $jwt")
             }.throwStatusCodeException(false)
             .connect { request -> request.write(jsonBody)
                 val responseCode = (request.connection as HttpURLConnection).responseCode
                 when(responseCode){
-                    HttpURLConnection.HTTP_OK -> Gson().fromJson(request.readString(), ResponseDto::class.java).microservices
+                    HttpURLConnection.HTTP_OK -> Gson().fromJson(request.readString(), ResponseDto::class.java).let {
+                        businessLogicHolder.requestId = it.requestId
+                        it.microservices
+                    }
                     HttpURLConnection.HTTP_UNAUTHORIZED -> null
                     else -> throw RuntimeException()
                 }
             }
     }
 
-    override fun doInBackground(): List<MicroserviceDto> {
+    override fun doInBackground(): List<MicroserviceDto>? {
 
         val notification = Notification(
             "Microservices",
@@ -370,19 +371,29 @@ class HttpRequestWorker(
         )
         Notifications.Bus.notify(notification)
 
-        val jwtFromSettings = MsSettings.instance.state.JWT_TOKEN
+        val jwtFromSettings = PluginSettings.instance.state.JWT_TOKEN
 
-        val res = getMicroservicesOrNullOn401(jwtFromSettings)
+        val res = if (jwtFromSettings.isEmpty()) null else getMicroservicesOrNullOn401(jwtFromSettings)
 
-        res?.let { return it }
-        val token = MSAuthService.instance.authorize().get(120, TimeUnit.SECONDS).accessToken
-        MsSettings.instance.loadState(MsSettings.instance.state.apply { this.JWT_TOKEN = token })
-        return getMicroservicesOrNullOn401(token)!!
+        return res
     }
 
     override fun done() {
         try {
-            val result = get()
+            val result = get() ?: when(Messages.showYesNoCancelDialog(businessLogicHolder.project, "Authorize with github? Otherwise you can configure facades without LLM.", "Authorization", Messages.getQuestionIcon())){
+                Messages.YES -> {
+                    val token = PluginOAuthService.instance.authorize().get().accessToken
+                    PluginSettings.instance.loadState(PluginSettings.instance.state.apply { this.JWT_TOKEN = token })
+                    getMicroservicesOrNullOn401(token)!!
+                }
+                Messages.NO -> {
+                    emptyList()
+                }
+                else -> {
+                    FileEditorManager.getInstance(businessLogicHolder.project).closeFile(file)
+                    emptyList()
+                }
+            }
             block(result)
         } catch (e: Exception) {
             e.printStackTrace()
@@ -472,7 +483,8 @@ data class Microservice(
 data class BusinessLogicHolder(
     var microservices: HashMap<String,Microservice> = HashMap(),
     val project: Project,
-    val requestedClasses: List<PsiClass>
+    val requestedClasses: List<PsiClass>,
+    var requestId : String?,
 )
 
 data class ViewHolder(
@@ -514,13 +526,13 @@ data class ViewHolder(
 
 class LightVirtualFile1(
     val classes: List<PsiClass>,
-) : LightVirtualFile("Microservices", MyFileType(), "")
+) : LightVirtualFile("Microservices", MicroservicesFileType(), "")
 
 
 class MicroservicesFacadesFileEditor(project: Project, private val file: LightVirtualFile1) : FileEditor {
     //private val panel = MyPanel(project, file)
     private val requestedClasses = file.classes
-    private val businessLogicHolder = BusinessLogicHolder(project = project, requestedClasses = requestedClasses)
+    private val businessLogicHolder = BusinessLogicHolder(project = project, requestedClasses = requestedClasses, requestId = null)
 
     private val panel = createMainComponent(businessLogicHolder, file)
 

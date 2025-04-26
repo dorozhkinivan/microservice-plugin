@@ -5,7 +5,5 @@ import ru.itmo.ivandor.models.Class
 import ru.itmo.ivandor.models.Respp
 
 interface YandexGPTService {
-    suspend fun getMicroservicesModules(classNames: List<@Serializable Class>, contextInfo: Any?) : Respp
-
-    suspend fun getModulesForContext(classNames: List<String>, contextInfo: Any?) : Any
+    suspend fun getMicroservicesModules(classNames: List<@Serializable Class>, login: String) : Respp
 }

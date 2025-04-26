@@ -5,39 +5,27 @@ import com.auth0.jwt.algorithms.Algorithm
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
-import kotlinx.serialization.Serializable
-import ru.itmo.ivandor.utils.SettingsImpl
+import ru.itmo.ivandor.models.GitHubAuthResponse
+import ru.itmo.ivandor.models.GitHubResponse
+import ru.itmo.ivandor.utils.Settings
 import java.util.Date
 
-@Serializable
-data class GitHubResponse(
-    val login: String,
-)
-
-@Serializable
-data class GitHubAuthResponse(
-    val access_token: String,
-)
-
-
-class JwtServiceImpl(
+class AuthServiceImpl(
     private val client: HttpClient,
-) : JwtService {
+) : AuthService {
     override suspend fun generateJwt(oauthCode: String): String {
-        val clientId = SettingsImpl.oauthClientId
-        val secret = SettingsImpl.oauthSecret
+        val clientId = Settings.oauthClientId
+        val secret = Settings.oauthSecret
         val body = client.post("https://github.com/login/oauth/access_token?client_id=$clientId&code=$oauthCode&client_secret=$secret")
-        println("BODY:: $body")
-        val oauthToken = body.body<GitHubAuthResponse>().access_token
-        println("oauth: $oauthCode")
+        val oauthToken = body.body<GitHubAuthResponse>().accessToken
         val login = client.get("https://api.github.com/user"){
             header("Authorization", "Bearer $oauthToken")
         }.body<GitHubResponse>().login
-        println("login: $login")
+
         val token = JWT.create()
             .withClaim("login", login)
-            .withExpiresAt(Date(System.currentTimeMillis() + SettingsImpl.jwtLifetimeMs))
-            .sign(Algorithm.HMAC256(SettingsImpl.jwtSecret))
+            .withExpiresAt(Date(System.currentTimeMillis() + Settings.jwtLifetimeMs))
+            .sign(Algorithm.HMAC256(Settings.jwtSecret))
         return token
     }
 }

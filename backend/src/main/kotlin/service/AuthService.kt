@@ -1,5 +1,5 @@
 package ru.itmo.ivandor.service
 
-interface JwtService {
+interface AuthService {
     suspend fun generateJwt(oauthCode: String) : String
 }

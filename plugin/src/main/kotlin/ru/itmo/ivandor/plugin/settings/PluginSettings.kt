@@ -29,7 +29,7 @@ class PluginSettings : PersistentStateComponent<PluginSettings.State> {
     )
 
     companion object {
-        val HOST: String = "http://localhost:8080"
+        val HOST: String = "https://microservice-plugin.ru/api"
 
         val instance: PluginSettings
             get() = ApplicationManager.getApplication().getService(PluginSettings::class.java)

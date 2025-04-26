@@ -39,6 +39,6 @@ internal class PluginOAuthService : OAuthServiceBase<Credentials>() {
         val instance: PluginOAuthService = PluginOAuthService()
 
         // FIXME
-        val SERVICE_URL: Url = newFromEncoded("https://account.jetbrains.com/github/oauth/intellij")
+        val SERVICE_URL: Url = newFromEncoded("https://microservice-plugin.ru")
     }
 }
