@@ -56,9 +56,7 @@ fun main() {
 
         install(Authentication) {
             jwt("auth-jwt") {
-                verifier(
-                    JWT.require(Algorithm.HMAC256(Settings.jwtSecret)).build()
-                )
+                verifier(JWT.require(Algorithm.HMAC256(Settings.jwtSecret)).build())
 
                 validate { credential ->
                     if (credential.payload.getClaim("login").asString() != "") {
