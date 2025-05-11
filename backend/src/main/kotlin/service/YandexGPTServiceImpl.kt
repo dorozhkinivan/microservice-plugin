@@ -14,8 +14,8 @@ class YandexGPTServiceImpl(
     private val client: HttpClient,
     private val analyticsService: AnalyticsService,
     ) : YandexGPTService {
-    override suspend fun getMicroservicesModules(classNames: List<Class>, login: String): Respp {
-        val reqq = """
+    override suspend fun getMicroservicesModules(classNames: List<Class>, login: String): Response {
+        val requestBody = """
             {
                 "modelUri": "gpt://${Settings.ycFolder}/yandexgpt/rc",
                 "completionOptions": {
@@ -68,24 +68,22 @@ class YandexGPTServiceImpl(
       "required": ["microservices"]
     }
   }
-
-            }
+}
         """.trimIndent()
 
-        val resp = client.post("https://llm.api.cloud.yandex.net/foundationModels/v1/completion") {
+        val response = client.post("https://llm.api.cloud.yandex.net/foundationModels/v1/completion") {
             header("x-folder-id", Settings.ycFolder)
             header("Authorization", "Bearer ${Settings.gptToken}")
             header("Content-Type", "application/json")
-            setBody(reqq)
+            setBody(requestBody)
         }
 
-        if (!resp.status.isSuccess())
-        throw RuntimeException("!!! ${resp.bodyAsText()}  | ${resp.status.value}!!!")
+        if (!response.status.isSuccess())
+            throw RuntimeException("Got error from YandexGpt: ${response.bodyAsText()}, ${response.status.value}")
 
 
-        val text = resp.body<GptResponse>().result.alternatives.first().message.text
-
-        val gptResponse = Json.decodeFromString<Respp>(text)
+        val text = response.body<GptResponse>().result.alternatives.first().message.text
+        val gptResponse = Json.decodeFromString<Response>(text)
 
         analyticsService.saveRequestData(
             login = login,

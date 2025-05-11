@@ -45,9 +45,16 @@ dependencies {
 
     // connection pool
     implementation("com.zaxxer:HikariCP:3.4.5")
+
+    // tests
+    testImplementation("org.junit.jupiter:junit-jupiter-engine:5.0.0")
+    testImplementation("io.mockk:mockk-jvm:1.13.2")
+    testImplementation("io.ktor:ktor-client-mock")
+    testImplementation("io.ktor:ktor-client-mock-jvm")
 }
 
 tasks.test {
+    jvmArgs("-Dnet.bytebuddy.experimental=true")
     useJUnitPlatform()
 }
 kotlin {

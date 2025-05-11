@@ -15,9 +15,9 @@ jobs:
         run: echo "${{secrets.CI_REGISTRY_KEY}}" | docker login --username oauth --password-stdin cr.yandex
       - name: Prepare gradle
         uses: gradle/gradle-build-action@v2
-      - name: Build jar
+      - name: Build jar and run tests
         working-directory: backend
-        run: ./gradlew build
+        run: ./gradlew build test --info
       - name: Build
         run: docker build "${GITHUB_WORKSPACE}" --file "${GITHUB_WORKSPACE}/backend/Dockerfile" --tag "${{ secrets.DOCKER_REGISTRY }}/production:latest" --no-cache
       - name: Push

@@ -16,7 +16,7 @@ data class GitHubAuthResponse(
 )
 
 @Serializable
-data class Respp(
+data class Response(
     val microservices: List<Microservice>,
     var requestId: String = UUID.randomUUID().toString()
 )
