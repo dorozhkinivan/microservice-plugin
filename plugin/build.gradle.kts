@@ -18,6 +18,12 @@ intellij {
     plugins.set(listOf("com.intellij.java", "org.jetbrains.kotlin"))
 }
 
+dependencies {
+    implementation("org.junit.jupiter:junit-jupiter:5.8.1")
+    testImplementation("junit:junit:4.13.2")
+    implementation(kotlin("stdlib-jdk8"))
+}
+
 tasks {
     withType<JavaCompile> {
         sourceCompatibility = "17"

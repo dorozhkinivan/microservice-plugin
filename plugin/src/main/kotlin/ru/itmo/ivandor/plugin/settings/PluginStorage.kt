@@ -6,14 +6,16 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.SettingsCategory
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
+import com.intellij.util.Url
+import com.intellij.util.Urls.newFromEncoded
 
 @Service(Service.Level.APP)
 @State(
-    name = "PluginSettings",
+    name = "PluginStorage",
     storages = [Storage(value = "microservices_plugin.xml")],
     category = SettingsCategory.TOOLS
 )
-class PluginSettings : PersistentStateComponent<PluginSettings.State> {
+class PluginStorage : PersistentStateComponent<PluginStorage.State> {
     private var myState = State()
 
     override fun getState(): State {
@@ -25,13 +27,14 @@ class PluginSettings : PersistentStateComponent<PluginSettings.State> {
     }
 
     data class State (
-        var JWT_TOKEN: String = ""
+        var jwtToken: String = ""
     )
 
     companion object {
-        val HOST: String = "https://microservice-plugin.ru/api"
+        val SERVICE_URL: Url = newFromEncoded("https://microservice-plugin.ru")
+        val HOST: String = "$SERVICE_URL/api"
 
-        val instance: PluginSettings
-            get() = ApplicationManager.getApplication().getService(PluginSettings::class.java)
+        val instance: PluginStorage
+            get() = ApplicationManager.getApplication().getService(PluginStorage::class.java)
     }
 }

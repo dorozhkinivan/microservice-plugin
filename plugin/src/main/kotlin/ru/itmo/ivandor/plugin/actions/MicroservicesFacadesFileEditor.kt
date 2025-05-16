@@ -1,29 +1,16 @@
 package ru.itmo.ivandor.plugin.actions
 
-import com.google.gson.Gson
-import com.google.gson.GsonBuilder
 import com.intellij.ide.highlighter.JavaFileType
 import com.intellij.ide.util.TreeClassChooser
 import com.intellij.ide.util.TreeClassChooserFactory
-import com.intellij.lang.java.JavaLanguage
-import com.intellij.notification.Notification
-import com.intellij.notification.NotificationType
-import com.intellij.notification.Notifications
-import com.intellij.openapi.fileEditor.FileEditor
 import com.intellij.openapi.fileEditor.FileEditorManager
-import com.intellij.openapi.fileEditor.FileEditorState
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
-import com.intellij.openapi.util.Key
-import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiClass
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.testFramework.LightVirtualFile
 import com.intellij.ui.EditorTextField
 import com.intellij.ui.util.preferredWidth
-import com.intellij.util.io.HttpRequests
-import com.jetbrains.rd.util.firstOrNull
-import generateNewJavaClass
 import java.awt.BorderLayout
 import java.awt.Component
 import java.awt.Cursor
@@ -31,8 +18,6 @@ import java.awt.Dimension
 import java.awt.GridLayout
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
-import java.beans.PropertyChangeListener
-import java.net.HttpURLConnection
 import java.util.*
 import javax.swing.BorderFactory
 import javax.swing.Box
@@ -46,35 +31,30 @@ import javax.swing.JScrollPane
 import javax.swing.JSplitPane
 import javax.swing.JTextField
 import javax.swing.SwingConstants
-import javax.swing.SwingWorker
 import org.jetbrains.kotlin.idea.KotlinFileType
-import org.jetbrains.kotlin.idea.KotlinLanguage
-import removeUnusedImports
-import ru.itmo.ivandor.plugin.auth.PluginOAuthService
-import ru.itmo.ivandor.plugin.dto.ClassDto
 import ru.itmo.ivandor.plugin.dto.MicroserviceDto
-import ru.itmo.ivandor.plugin.dto.RequestDto
-import ru.itmo.ivandor.plugin.dto.ResponseDto
-import ru.itmo.ivandor.plugin.settings.PluginSettings
+import ru.itmo.ivandor.plugin.idea_file.MicroservicesFileType
+import ru.itmo.ivandor.plugin.service.code_modify.CodeModifyServiceImpl
+import ru.itmo.ivandor.plugin.remote.HttpProcessRequestWorker
 
-
-fun createFacadesPanel(businessLogicHolder: BusinessLogicHolder, viewHolder: ViewHolder, file: LightVirtualFile1): JPanel {
+fun createFacadesPanel(businessLogicHolder: BusinessLogicHolder, viewHolder: ViewHolder, file: MicroservicesConfigVirtualFile): JPanel {
     val addFacadeButton = JButton("Add facade")
     val generateButton = JButton("Generate code")
 
     generateButton.isEnabled = false
     generateButton.repaint()
 
+    val codeModifyService = CodeModifyServiceImpl(businessLogicHolder)
+
     generateButton.addActionListener {
         when(Messages.showYesNoCancelDialog(businessLogicHolder.project, "Close page on generation?", "", Messages.getQuestionIcon())){
             Messages.YES -> {
-                FileEditorManager.getInstance(businessLogicHolder.project).closeFile(file)
+                codeModifyService.saveCode().let {
+                    if (it) FileEditorManager.getInstance(businessLogicHolder.project).closeFile(file)
+                }
             }
             Messages.NO -> {
-                //
-            }
-            Messages.CANCEL -> {
-                //
+                codeModifyService.saveCode()
             }
         }
     }
@@ -120,7 +100,7 @@ fun createFacadesPanel(businessLogicHolder: BusinessLogicHolder, viewHolder: Vie
 
     }
 
-    HttpRequestWorker(file = file, businessLogicHolder = businessLogicHolder) { msList ->
+    HttpProcessRequestWorker(file = file, businessLogicHolder = businessLogicHolder) { msList ->
         msList.forEach {
             addFacade(it)
         }
@@ -189,17 +169,17 @@ fun createFacadeView(businessLogicHolder: BusinessLogicHolder, viewHolder: ViewH
     panel.add(scrollPane)
 
     val microserviceId = UUID.randomUUID().toString()
-    businessLogicHolder.microservices[microserviceId] = Microservice(ms?.name ?: "todo-add-name", classes = emptyList())
+    businessLogicHolder.microservices[microserviceId] = Microservice(headerField.text, classes = emptyList())
 
-    fun addClass(clazz: PsiClass?) {
+    fun addClass(clazz: PsiClass?, generateButton: JButton) {
         val itemPanel = JPanel()
         itemPanel.alignmentX = Component.LEFT_ALIGNMENT
         itemPanel.layout = BoxLayout(itemPanel, BoxLayout.X_AXIS)
 
         var result = listOf<PsiClass>()
 
-        var text : String? = null
-        var textFull : String? = null
+        var text : String?
+        var textFull : String?
         if (clazz == null) {
             val chooserFactory = TreeClassChooserFactory.getInstance(businessLogicHolder.project)
             val chooser: TreeClassChooser = chooserFactory.createNoInnerClassesScopeChooser(
@@ -217,10 +197,19 @@ fun createFacadeView(businessLogicHolder: BusinessLogicHolder, viewHolder: ViewH
 
         val isRemote = ms != null
 
+        if (result.isNotEmpty()){
+            generateButton.isEnabled = true
+            generateButton.revalidate()
+            generateButton.repaint()
+        }
+
 
         if (isRemote || result.isNotEmpty()){
             result.forEach { selectedClass ->
                 businessLogicHolder.microservices[microserviceId]!!.classes += selectedClass
+                if (isRemote){
+                    selectedClass.name?.let { businessLogicHolder.classesFromRemote += it }
+                }
                 text = selectedClass.name
                 textFull = selectedClass.qualifiedName
                 val itemLabel = JLabel(text)
@@ -229,10 +218,12 @@ fun createFacadeView(businessLogicHolder: BusinessLogicHolder, viewHolder: ViewH
                 deleteLabel.cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
                 deleteLabel.addMouseListener(object : MouseAdapter() {
                     override fun mouseClicked(e: MouseEvent?) {
-                        businessLogicHolder.microservices[microserviceId]?.classes // fixme
-                        // fixme add
-                        //         generateButton.isEnabled = false on conditopn
-                        //        generateButton.repaint()
+                        businessLogicHolder.microservices[microserviceId]!!.classes -= selectedClass
+                        if (businessLogicHolder.microservices[microserviceId]!!.classes.isEmpty()){
+                            generateButton.isEnabled = false
+                            generateButton.revalidate()
+                            generateButton.repaint()
+                        }
                         listPanel.remove(itemPanel)
                         listPanel.revalidate()
                         listPanel.repaint()
@@ -262,10 +253,11 @@ fun createFacadeView(businessLogicHolder: BusinessLogicHolder, viewHolder: ViewH
     val buttonsPanel = JPanel()
     buttonsPanel.layout = GridLayout(3, 1)
 
-
+    val generateButton = JButton("Show code")
+    generateButton.isEnabled = false
     val addButton = JButton("Add class")
     addButton.addActionListener {
-        addClass(null)
+        addClass(null, generateButton)
     }
     buttonsPanel.add(addButton)
 
@@ -279,23 +271,18 @@ fun createFacadeView(businessLogicHolder: BusinessLogicHolder, viewHolder: ViewH
     }
     buttonsPanel.add(deleteButton)
 
-    val generateButton = JButton("Show code")
     generateButton.addActionListener {
 
-        businessLogicHolder.microservices.firstOrNull()?.value?.classes?.firstOrNull()?.let {
-            val text = generateNewJavaClass(it, businessLogicHolder.microservices[microserviceId]!!.name)
-            //val tet = generateNewJavaClassFromPsiClass(it)
-            when(it.language){
-                JavaLanguage.INSTANCE -> {
-                    viewHolder.updateWithJava(text)
-                }
-                KotlinLanguage.INSTANCE -> {
-                    println("Kotlin!!!!!")
-                    viewHolder.updateWithJava(removeUnusedImports(text, businessLogicHolder.project))
-                }
+        val text = CodeModifyServiceImpl(businessLogicHolder).generateCode(microserviceId)
+        when(businessLogicHolder.microservices[microserviceId]?.useKotlin){
+            false -> {
+                viewHolder.updateWithJava(text)
             }
-        } ?: "not found"
-
+            true -> {
+                viewHolder.updateWithKotlin(text)
+            }
+            null -> {}
+        }
     }
     buttonsPanel.add(generateButton)
 
@@ -304,7 +291,7 @@ fun createFacadeView(businessLogicHolder: BusinessLogicHolder, viewHolder: ViewH
 
     val checkboxUseKotlin = JCheckBox("Use Kotlin")
     checkboxUseKotlin.addActionListener { _ ->
-        businessLogicHolder.microservices[microserviceId]?.useKotlin = checkboxUseKotlin.isSelected
+        businessLogicHolder.microservices[microserviceId]!!.useKotlin = checkboxUseKotlin.isSelected
     }
     flagsPanel.add(checkboxUseKotlin)
 
@@ -326,91 +313,13 @@ fun createFacadeView(businessLogicHolder: BusinessLogicHolder, viewHolder: ViewH
     panel.add(downPanel)
 
     ms?.classes?.forEach { classStr ->
-        addClass(businessLogicHolder.requestedClasses.first { it.name == classStr })
+        addClass(businessLogicHolder.requestedClasses.first { it.name == classStr }, generateButton)
     }
 
     return panel
 }
 
-
-class HttpRequestWorker(
-    private val file: LightVirtualFile1,
-    private val businessLogicHolder: BusinessLogicHolder,
-    private val block: (List<MicroserviceDto>) -> Unit,
-) : SwingWorker<List<MicroserviceDto>, Unit>() {
-
-    private fun getMicroservicesOrNullOn401(jwt: String) : List<MicroserviceDto>? {
-        val classes = file.classes.map {
-            ClassDto(name = it.name ?: "?", methods = it.methods.map { it.name })
-        }
-        val jsonBody = GsonBuilder().create().toJson(RequestDto(classes))
-        return HttpRequests.post("${PluginSettings.HOST}/process", "application/json")
-            .tuner {
-                it.setRequestProperty("Authorization", "Bearer $jwt")
-            }.throwStatusCodeException(false)
-            .connect { request -> request.write(jsonBody)
-                val responseCode = (request.connection as HttpURLConnection).responseCode
-                when(responseCode){
-                    HttpURLConnection.HTTP_OK -> Gson().fromJson(request.readString(), ResponseDto::class.java).let {
-                        businessLogicHolder.requestId = it.requestId
-                        it.microservices
-                    }
-                    HttpURLConnection.HTTP_UNAUTHORIZED -> null
-                    else -> throw RuntimeException()
-                }
-            }
-    }
-
-    override fun doInBackground(): List<MicroserviceDto>? {
-
-        val notification = Notification(
-            "Microservices",
-            "Microservices plugin enabled",
-            "Files of the selected directories are being analyzed",
-            NotificationType.INFORMATION
-        )
-        Notifications.Bus.notify(notification)
-
-        val jwtFromSettings = PluginSettings.instance.state.JWT_TOKEN
-
-        val res = if (jwtFromSettings.isEmpty()) null else getMicroservicesOrNullOn401(jwtFromSettings)
-
-        return res
-    }
-
-    override fun done() {
-        try {
-            val result = get() ?: when(Messages.showYesNoCancelDialog(businessLogicHolder.project, "Authorize with github? Otherwise you can configure facades without LLM.", "Authorization", Messages.getQuestionIcon())){
-                Messages.YES -> {
-                    val token = PluginOAuthService.instance.authorize().get().accessToken
-                    PluginSettings.instance.loadState(PluginSettings.instance.state.apply { this.JWT_TOKEN = token })
-                    getMicroservicesOrNullOn401(token)!!
-                }
-                Messages.NO -> {
-                    emptyList()
-                }
-                else -> {
-                    FileEditorManager.getInstance(businessLogicHolder.project).closeFile(file)
-                    emptyList()
-                }
-            }
-            block(result)
-        } catch (e: Exception) {
-            e.printStackTrace()
-            val notification = Notification(
-                "Microservices",
-                "Backend error",
-                "Can not get facades from backend. You can configure custom facades🙃",
-                NotificationType.WARNING
-            )
-            Notifications.Bus.notify(notification)
-            block(listOf())
-        }
-    }
-}
-
-
-fun createMainComponent(businessLogicHolder: BusinessLogicHolder, file: LightVirtualFile1): JComponent {
+fun createMainComponent(businessLogicHolder: BusinessLogicHolder, file: MicroservicesConfigVirtualFile): JComponent {
 
     val mainPanel = JPanel(BorderLayout())
 
@@ -439,7 +348,6 @@ fun createMainComponent(businessLogicHolder: BusinessLogicHolder, file: LightVir
     mainPanel.add(rightPanel, BorderLayout.LINE_END)
 
     val leftPanel = JPanel(BorderLayout())
-  //  leftPanel.preferredSize = Dimension(600, screenBounds.height) // Это будет изменено компоновщиком
     mainPanel.add(leftPanel, BorderLayout.CENTER)
 
     val topLabel = JLabel("Текст сверху", SwingConstants.CENTER)
@@ -475,13 +383,14 @@ fun createMainComponent(businessLogicHolder: BusinessLogicHolder, file: LightVir
 data class Microservice(
     var name: String,
     var classes: List<PsiClass>,
-    var useKotlin: Boolean = true,
-    var deprecateClasses: Boolean = true,
+    var useKotlin: Boolean = false,
+    var deprecateClasses: Boolean = false,
     var addHttpClient: Boolean = false,
 )
 
 data class BusinessLogicHolder(
     var microservices: HashMap<String,Microservice> = HashMap(),
+    var classesFromRemote: List<String> = emptyList(),
     val project: Project,
     val requestedClasses: List<PsiClass>,
     var requestId : String?,
@@ -496,8 +405,7 @@ data class ViewHolder(
 
     fun updateWithJava(code: String) {
         rightPanel.removeAll()
-        //if (javaEditor !in rightPanel.components)
-            rightPanel.add(javaEditor)
+        rightPanel.add(javaEditor)
 
         javaEditor.text = code
         rightPanel.add(JScrollPane(javaEditor).apply {
@@ -511,56 +419,19 @@ data class ViewHolder(
 
     fun updateWithKotlin(code: String) {
         rightPanel.removeAll()
-        //if (kotlinEditor !in rightPanel.components)
-            rightPanel.add(JScrollPane(kotlinEditor).apply {
-                this.verticalScrollBarPolicy = JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED
-                this.horizontalScrollBarPolicy = JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED
-            }, BorderLayout.CENTER)
-        kotlinEditor.text = code
         rightPanel.add(kotlinEditor)
+
+        kotlinEditor.text = code
+        rightPanel.add(JScrollPane(kotlinEditor).apply {
+            this.verticalScrollBarPolicy = JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED
+            this.horizontalScrollBarPolicy = JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED
+        }, BorderLayout.CENTER)
         kotlinEditor.repaint()
         rightPanel.revalidate()
         rightPanel.repaint()
     }
 }
 
-class LightVirtualFile1(
+class MicroservicesConfigVirtualFile(
     val classes: List<PsiClass>,
 ) : LightVirtualFile("Microservices", MicroservicesFileType(), "")
-
-
-class MicroservicesFacadesFileEditor(project: Project, private val file: LightVirtualFile1) : FileEditor {
-    //private val panel = MyPanel(project, file)
-    private val requestedClasses = file.classes
-    private val businessLogicHolder = BusinessLogicHolder(project = project, requestedClasses = requestedClasses, requestId = null)
-
-    private val panel = createMainComponent(businessLogicHolder, file)
-
-    override fun getComponent(): JComponent = panel
-
-    override fun getPreferredFocusedComponent(): JComponent = panel
-
-    override fun getName(): String = "Stubs"
-
-    override fun setState(state: FileEditorState) {}
-
-    override fun isModified(): Boolean = false
-
-    override fun isValid(): Boolean = true
-
-    override fun getFile(): VirtualFile = file
-
-    override fun addPropertyChangeListener(listener: PropertyChangeListener) {
-    }
-
-    override fun removePropertyChangeListener(listener: PropertyChangeListener) {}
-    override fun <T : Any?> getUserData(key: Key<T>): T? {
-return null
-    }
-
-    override fun <T : Any?> putUserData(key: Key<T>, value: T?) {
-    }
-
-    override fun dispose() {}
-}
-
