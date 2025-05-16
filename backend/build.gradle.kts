@@ -38,6 +38,7 @@ dependencies {
     implementation("org.slf4j:slf4j-api:1.6.1")
     implementation("org.slf4j:slf4j-simple:1.6.1")
 
+
     // clickhouse
     implementation("com.clickhouse:clickhouse-jdbc:0.8.4") {
         exclude(group = "org.slf4j")
