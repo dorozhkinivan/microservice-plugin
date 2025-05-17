@@ -3,7 +3,6 @@ package ru.itmo.ivandor.dao
 import com.zaxxer.hikari.HikariDataSource
 import ru.itmo.ivandor.models.Class
 import ru.itmo.ivandor.models.Microservice
-import java.util.*
 
 class AnalyticsDaoImpl(
     private val hc: HikariDataSource
