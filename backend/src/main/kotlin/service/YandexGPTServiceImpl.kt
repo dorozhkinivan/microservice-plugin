@@ -13,14 +13,14 @@ import ru.itmo.ivandor.utils.Settings
 class YandexGPTServiceImpl(
     private val client: HttpClient,
     private val analyticsService: AnalyticsService,
-    ) : YandexGPTService {
+) : YandexGPTService {
     override suspend fun getMicroservicesModules(classNames: List<Class>, login: String): Response {
         val requestBody = """
             {
                 "modelUri": "gpt://${Settings.ycFolder}/yandexgpt/rc",
                 "completionOptions": {
                     "stream": false,
-                    "temperature": 0.8,
+                    "temperature": 0.7,
                     "reasoningOptions": {
                         "mode": "DISABLED"
                     }
@@ -35,40 +35,40 @@ class YandexGPTServiceImpl(
                         "text": "${classNames.joinToString(separator = ", ") { "Class: '${it.name}', methods: [${it.methods.joinToString(separator = ",")}]" }}"
                     }
                 ],
-  "json_schema": {
-    "schema": {
-      "type": "object",
-      "properties": {
-        "microservices": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "name": {
-                "type": "string",
-                "description": "Microservice facade class name."
-              },
-              "classes": {
-                "type": "array",
-                "items": {
-                  "type": "string",
-                  "description": "Class from project, related to new microservice"
-                },
-                "description": "Classes array"
-              },
-              "description": {
-                "type": "string",
-                "description": "Write the reason why you created this particular class? What methods influenced your decision?"
+              "json_schema": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "microservices": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string",
+                            "description": "Microservice facade class name."
+                          },
+                          "classes": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "description": "Class from project, related to new microservice"
+                            },
+                            "description": "Classes array"
+                          },
+                          "description": {
+                            "type": "string",
+                            "description": "Write the reason why you created this particular class? What methods influenced your decision?"
+                          }
+                        },
+                        "required": ["name", "classes", "description"]
+                      }
+                    }
+                  },
+                  "required": ["microservices"]
+                }
               }
-            },
-            "required": ["name", "classes", "description"]
-          }
-        }
-      },
-      "required": ["microservices"]
-    }
-  }
-}
+            }
         """.trimIndent()
 
         val response = client.post("https://llm.api.cloud.yandex.net/foundationModels/v1/completion") {
@@ -85,15 +85,19 @@ class YandexGPTServiceImpl(
         val text = response.body<GptResponse>().result.alternatives.first().message.text
         val gptResponse = Json.decodeFromString<Response>(text)
 
-        analyticsService.saveRequestData(
-            login = login,
-            requestId = gptResponse.requestId,
-            classes = classNames
-        )
-        analyticsService.saveYandexGptData(
-            requestId = gptResponse.requestId,
-            microservices = gptResponse.microservices,
-        )
+        try {
+            analyticsService.saveRequestData(
+                login = login,
+                requestId = gptResponse.requestId,
+                classes = classNames
+            )
+            analyticsService.saveYandexGptData(
+                requestId = gptResponse.requestId,
+                microservices = gptResponse.microservices,
+            )
+        } catch (e: Throwable){
+            e.printStackTrace()
+        }
 
         return gptResponse
     }
