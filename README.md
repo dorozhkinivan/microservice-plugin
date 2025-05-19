@@ -1,6 +1,6 @@
 # Microservice Architecture Intellij idea plugin
 
-Плагин, упрощающий переход микросервисной архитектуре.
+Плагин, упрощающий переход к микросервисной архитектуре.
 
 Скачать плагин: _todo link with totally correct plugin without bugs_
 

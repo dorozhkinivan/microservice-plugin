@@ -11,7 +11,7 @@ import org.jetbrains.ide.BuiltInServerManager
 import org.jetbrains.ide.RestService
 import ru.itmo.ivandor.plugin.settings.PluginStorage
 
-internal class PluginOAuthService : OAuthServiceBase<Credentials>() {
+class PluginOAuthService : OAuthServiceBase<Credentials>() {
     override val name = SERVICE_NAME
 
     fun authorize(): CompletableFuture<Credentials> = authorize(MSAuthRequest())
