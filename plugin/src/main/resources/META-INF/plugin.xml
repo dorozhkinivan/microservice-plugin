@@ -17,7 +17,7 @@
     </extensions>
 
     <actions>
-        <action id="AnalyseCodeAction" class="AnalyseCodeAction" text="Analyse" description="Analyse code for refactoring code to microservice architecture using LLM model">
+        <action id="AnalyseCodeAction" class="AnalyseCodeAction" text="Find Microservices" description="Analyse code for refactoring code to microservice architecture using LLM model">
             <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
         </action>
     </actions>

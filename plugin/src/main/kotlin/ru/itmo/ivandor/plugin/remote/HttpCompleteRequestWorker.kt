@@ -5,7 +5,7 @@ import com.intellij.openapi.diagnostic.logger
 import com.intellij.util.io.HttpRequests
 import java.net.HttpURLConnection
 import javax.swing.SwingWorker
-import ru.itmo.ivandor.plugin.actions.BusinessLogicHolder
+import ru.itmo.ivandor.plugin.service.BusinessLogicHolder
 import ru.itmo.ivandor.plugin.dto.ResultDto
 import ru.itmo.ivandor.plugin.settings.PluginStorage
 

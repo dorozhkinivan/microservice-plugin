@@ -20,8 +20,8 @@ fun Route.processRoute() {
     post("/process") {
         val body = call.receive<Request>()
         val login = call.getLogin()
-        val a = gptService.getMicroservicesModules(body.classes, login)
-        call.respond(HttpStatusCode.OK, a)
+        val response = gptService.getMicroservicesModules(body.classes, login)
+        call.respond(HttpStatusCode.OK, response)
     }
 }
 

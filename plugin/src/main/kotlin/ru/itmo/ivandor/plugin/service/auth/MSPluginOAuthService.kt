@@ -11,7 +11,7 @@ import org.jetbrains.ide.BuiltInServerManager
 import org.jetbrains.ide.RestService
 import ru.itmo.ivandor.plugin.settings.PluginStorage
 
-class PluginOAuthService : OAuthServiceBase<Credentials>() {
+class MSPluginOAuthService : OAuthServiceBase<Credentials>() {
     override val name = SERVICE_NAME
 
     fun authorize(): CompletableFuture<Credentials> = authorize(MSAuthRequest())
@@ -32,6 +32,6 @@ class PluginOAuthService : OAuthServiceBase<Credentials>() {
     companion object {
         private const val SERVICE_NAME = "microservices"
 
-        val instance: PluginOAuthService = PluginOAuthService()
+        val instance: MSPluginOAuthService = MSPluginOAuthService()
     }
 }

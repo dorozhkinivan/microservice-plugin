@@ -1,12 +1,12 @@
 package ru.itmo.ivandor.plugin.dto
 
 data class ResponseDto(
-    val microservices: List<MicroserviceDto>,
-    val requestId: String,
+    var microservices: List<MicroserviceDto>,
+    var requestId: String,
 )
 
 data class MicroserviceDto(
-    val name: String,
-    val description: String,
-    val classes: List<String>
+    var name: String,
+    var description: String,
+    var classes: List<String>
 )

@@ -5,7 +5,7 @@ import com.intellij.collaboration.auth.services.OAuthService
 import ru.itmo.ivandor.plugin.settings.PluginStorage.Companion.SERVICE_URL
 
 internal class MSAuthCallbackHandler : OAuthCallbackHandlerBase() {
-    override fun oauthService(): OAuthService<*> = PluginOAuthService.instance
+    override fun oauthService(): OAuthService<*> = MSPluginOAuthService.instance
 
     override fun handleOAuthResult(oAuthResult: OAuthService.OAuthResult<*>): AcceptCodeHandleResult {
         val redirectUrl = if (oAuthResult.isAccepted) {

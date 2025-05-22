@@ -20,7 +20,7 @@ import java.time.format.DateTimeFormatter
 import org.jetbrains.kotlin.idea.KotlinFileType
 import org.jetbrains.kotlin.psi.KtClass
 import org.jetbrains.kotlin.psi.KtPsiFactory
-import ru.itmo.ivandor.plugin.actions.BusinessLogicHolder
+import ru.itmo.ivandor.plugin.service.BusinessLogicHolder
 import ru.itmo.ivandor.plugin.remote.HttpCompleteRequestWorker
 
 interface CodeModifyService {
@@ -125,25 +125,22 @@ class CodeModifyServiceImpl(
             }
             ProgressManager.getInstance().run(object : Task.Backgroundable(businessLogicHolder.project, "Code generation", false) {
                 override fun run(indicator: ProgressIndicator) {
-                    ApplicationManager.getApplication().invokeLater {
-                        WriteCommandAction.runWriteCommandAction(businessLogicHolder.project){
-                            val subDirectory = directory.createSubdirectory(
-                                "facades_${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"))}"
-                            )
-                            val pack = getPackageName(businessLogicHolder.project, subDirectory)
+                    WriteCommandAction.runWriteCommandAction(businessLogicHolder.project){
+                        val subDirectory = directory.createSubdirectory(
+                            "facades_${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"))}"
+                        )
+                        val pack = getPackageName(businessLogicHolder.project, subDirectory)
 
-                            val deprecatedClassesMS = microservices.filter { it.value.deprecateClasses }
-                            CodeModifyServiceImpl(businessLogicHolder).deprecateClasses(
-                                deprecatedClassesMS.map { it.value.classes to it.value.name }.flatMap { it.first.map { clazz -> clazz to "$pack.${it.second}" } }.toMap()
-                            )
+                        val deprecatedClassesMS = microservices.filter { it.value.deprecateClasses }
+                        CodeModifyServiceImpl(businessLogicHolder).deprecateClasses(
+                            deprecatedClassesMS.map { it.value.classes to it.value.name }.flatMap { it.first.map { clazz -> clazz to "$pack.${it.second}" } }.toMap()
+                        )
 
 
-                            namesToNewClasses.forEach { (fileName, fileText) ->
-                                indicator.text = "Generating $fileName"
-                                createFileInDirectory(subDirectory, fileName, "package $pack;\n\n$fileText")
-                            }
-
+                        namesToNewClasses.forEach { (fileName, fileText) ->
+                            createFileInDirectory(subDirectory, fileName, "package $pack;\n\n$fileText")
                         }
+
                     }
                 }
             })

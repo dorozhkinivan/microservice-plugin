@@ -7,15 +7,20 @@ import com.intellij.openapi.util.Key
 import com.intellij.openapi.vfs.VirtualFile
 import java.beans.PropertyChangeListener
 import javax.swing.JComponent
-import ru.itmo.ivandor.plugin.actions.BusinessLogicHolder
-import ru.itmo.ivandor.plugin.actions.MicroservicesConfigVirtualFile
-import ru.itmo.ivandor.plugin.actions.createMainComponent
+import ru.itmo.ivandor.plugin.service.BusinessLogicHolder
+import ru.itmo.ivandor.plugin.service.code_analyse.CodeAnalyseServiceImpl
+import ru.itmo.ivandor.plugin.ui.createMainComponent
 
 class MicroservicesFacadesFileEditor(
     project: Project,
     private val file: MicroservicesConfigVirtualFile,
 ) : FileEditor {
-    private val businessLogicHolder = BusinessLogicHolder(project = project, requestedClasses = file.classes, requestId = null)
+    private val codeAnalyseService = CodeAnalyseServiceImpl(file.projectFiles, project)
+    private val businessLogicHolder = BusinessLogicHolder(
+        project = project,
+        requestedClasses = codeAnalyseService.getPsiClasses(),
+        requestId = null,
+    )
 
     private val panel = createMainComponent(businessLogicHolder, file)
 

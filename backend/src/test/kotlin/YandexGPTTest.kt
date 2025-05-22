@@ -17,11 +17,12 @@ class YandexGPTTest {
 fun `check if analytics data saved`(): Unit = runBlocking {
     val login = "dorozhkinIvan"
     val mockEngine = MockEngine { _ ->
-        respond(yandexGPTResponse, headers = headersOf(HttpHeaders.ContentType, "application/json"))
+        respond(yandexGPTResponse, headers = headersOf(
+            HttpHeaders.ContentType, "application/json")
+        )
     }
     val analyticsService = mockk<AnalyticsService>(relaxed = true)
     val classes = listOf(Class("demoClass", listOf("demoMethod")))
-
     val service = YandexGPTServiceImpl(
         client = getHttpClient(mockEngine),
         analyticsService = analyticsService,

@@ -10,28 +10,23 @@ import com.intellij.openapi.ui.Messages
 import com.intellij.util.io.HttpRequests
 import java.net.HttpURLConnection
 import javax.swing.SwingWorker
-import ru.itmo.ivandor.plugin.actions.BusinessLogicHolder
-import ru.itmo.ivandor.plugin.actions.MicroservicesConfigVirtualFile
-import ru.itmo.ivandor.plugin.service.auth.PluginOAuthService
+import ru.itmo.ivandor.plugin.service.BusinessLogicHolder
+import ru.itmo.ivandor.plugin.service.auth.MSPluginOAuthService
 import ru.itmo.ivandor.plugin.dto.ClassDto
 import ru.itmo.ivandor.plugin.dto.MicroserviceDto
 import ru.itmo.ivandor.plugin.dto.RequestDto
 import ru.itmo.ivandor.plugin.dto.ResponseDto
+import ru.itmo.ivandor.plugin.idea_file.MicroservicesConfigVirtualFile
 import ru.itmo.ivandor.plugin.settings.PluginStorage
 
 class HttpProcessRequestWorker(
     private val file: MicroservicesConfigVirtualFile,
     private val businessLogicHolder: BusinessLogicHolder,
+    private val classes: List<ClassDto>,
     private val block: (List<MicroserviceDto>) -> Unit,
 ) : SwingWorker<List<MicroserviceDto>, Unit>() {
-
-
     private fun getMicroservicesOrNullOn401(jwt: String) : List<MicroserviceDto>? {
-        val classes = file.classes.mapNotNull {
-            val methods = it.filteredMethods
-            if (methods.isEmpty()) null
-            else ClassDto(name = it.name ?: "?", methods = methods)
-        }
+
         val jsonBody = GsonBuilder().create().toJson(RequestDto(classes))
         return HttpRequests.post("${PluginStorage.HOST}/process", "application/json")
             .tuner {
@@ -71,7 +66,7 @@ class HttpProcessRequestWorker(
         try {
             val result = get() ?: when(Messages.showYesNoCancelDialog(businessLogicHolder.project, "Authorize with github? Otherwise you can configure facades without LLM.", "Authorization", Messages.getQuestionIcon())){
                 Messages.YES -> {
-                    val token = PluginOAuthService.instance.authorize().get().accessToken
+                    val token = MSPluginOAuthService.instance.authorize().get().accessToken
                     PluginStorage.instance.loadState(PluginStorage.instance.state.apply { this.jwtToken = token })
                     getMicroservicesOrNullOn401(token)!!
                 }

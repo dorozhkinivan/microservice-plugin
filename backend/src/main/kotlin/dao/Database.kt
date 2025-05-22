@@ -16,7 +16,6 @@ fun createConnectionPool() : HikariDataSource {
     properties["user"] = "admin"
     properties["password"] = System.getenv("DB_PASS")
     properties["database"] = "analytics"
-
     val poolConfig = HikariConfig()
     poolConfig.connectionTimeout = 5000L
     poolConfig.maximumPoolSize = 5

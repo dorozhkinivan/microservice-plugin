@@ -1,16 +1,13 @@
-package ru.itmo.ivandor.plugin.actions
+package ru.itmo.ivandor.plugin.service
 
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiClass
-import com.intellij.testFramework.LightVirtualFile
 import com.intellij.ui.EditorTextField
 import java.awt.BorderLayout
 import java.util.*
 import javax.swing.JPanel
 import javax.swing.JScrollPane
 import javax.swing.JSplitPane
-import ru.itmo.ivandor.plugin.idea_file.MicroservicesFileType
 
 data class Microservice(
     var name: String,
@@ -21,7 +18,7 @@ data class Microservice(
 )
 
 data class BusinessLogicHolder(
-    var microservices: HashMap<String,Microservice> = HashMap(),
+    var microservices: HashMap<String, Microservice> = HashMap(),
     var classesFromRemote: List<String> = emptyList(),
     val project: Project,
     val requestedClasses: List<PsiClass>,

@@ -54,31 +54,30 @@ fun main() {
             level = Level.INFO
         }
 
-        install(Authentication) {
-            jwt("auth-jwt") {
-                verifier(JWT.require(Algorithm.HMAC256(Settings.jwtSecret)).build())
+install(Authentication) {
+    jwt("auth-jwt") {
+        verifier(JWT.require(Algorithm.HMAC256(Settings.jwtSecret)).build())
 
-                validate { credential ->
-                    if (credential.payload.getClaim("login").asString() != "") {
-                        JWTPrincipal(credential.payload)
-                    } else {
-                        null
-                    }
-                }
-
-                challenge { _, _ ->
-                    call.respond(HttpStatusCode.Unauthorized, "Token is not valid or has expired")
-                }
+        validate { credential ->
+            if (credential.payload.getClaim("login").asString() != "") {
+                JWTPrincipal(credential.payload)
+            } else {
+                null
             }
         }
 
-        routing {
-            authenticate("auth-jwt") {
-                completeRoute()
-                processRoute()
-            }
-            newJwtRoute()
-            proxyForOauthCodeRoute()
+        challenge { _, _ ->
+            call.respond(HttpStatusCode.Unauthorized, "Token is not valid or has expired")
         }
+    }
+}
+routing {
+    authenticate("auth-jwt") {
+        completeRoute()
+        processRoute()
+    }
+    newJwtRoute()
+    proxyForOauthCodeRoute()
+}
     }.start(wait = true)
 }
