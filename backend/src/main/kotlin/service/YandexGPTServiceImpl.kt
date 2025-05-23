@@ -28,7 +28,7 @@ class YandexGPTServiceImpl(
                 "messages": [
                     {
                         "role": "system",
-                        "text": "You are an intelligent assistant who helps optimize code in Java and Kotlin. You have been given a list of classes and its methods. Think about which of them should be moved to microservices, creating facade classes at the same time for a smooth transition. Group classes by cohesive business domains. But create only those microservices that you think would be useful for the project architecture. There shouldn't be too many of them."
+                        "text": "You are an intelligent assistant who helps optimize code in Java and Kotlin. You have been given a list of classes and its methods. Think about which of them should be moved to microservices, creating facade classes at the same time for a smooth transition. Group classes by cohesive business domains. But create only those microservices that you think would be useful for the project architecture. There shouldn't be too many of them, no more than 3."
                     },
                     {
                         "role": "user",
@@ -85,19 +85,19 @@ class YandexGPTServiceImpl(
         val text = response.body<GptResponse>().result.alternatives.first().message.text
         val gptResponse = Json.decodeFromString<Response>(text)
 
-        try {
-            analyticsService.saveRequestData(
-                login = login,
-                requestId = gptResponse.requestId,
-                classes = classNames
-            )
-            analyticsService.saveYandexGptData(
-                requestId = gptResponse.requestId,
-                microservices = gptResponse.microservices,
-            )
-        } catch (e: Throwable){
-            e.printStackTrace()
-        }
+//        try {
+//            analyticsService.saveRequestData(
+//                login = login,
+//                requestId = gptResponse.requestId,
+//                classes = classNames
+//            )
+//            analyticsService.saveYandexGptData(
+//                requestId = gptResponse.requestId,
+//                microservices = gptResponse.microservices,
+//            )
+//        } catch (e: Throwable){
+//            e.printStackTrace()
+//        }
 
         return gptResponse
     }

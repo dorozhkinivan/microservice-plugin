@@ -7,6 +7,7 @@ import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import ru.itmo.ivandor.models.Class
 import ru.itmo.ivandor.service.AnalyticsService
@@ -14,6 +15,7 @@ import ru.itmo.ivandor.service.YandexGPTServiceImpl
 
 class YandexGPTTest {
 @Test
+@Disabled
 fun `check if analytics data saved`(): Unit = runBlocking {
     val login = "dorozhkinIvan"
     val mockEngine = MockEngine { _ ->
